@@ -1,122 +1,128 @@
 # Changelog
 
-Все заметные изменения в AnimestarsCards Stats Extension документируются в этом файле.
+All notable changes to AnimestarsCards Stats Extension are documented in this file.
 
-Формат основан на [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-и этот проект следует [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [2.0.0] - 2025-09-15
 
-### 🚀 Новые возможности
-- **Адаптивная система статистики** - динамическое изменение размера и стиля в зависимости от данных
-- **Glassmorphism дизайн** - современный полупрозрачный интерфейс с размытием
-- **Умное кэширование** - оптимизированная работа с большими объемами данных (29K+ карт)
-- **Автообновление базы** - периодическая синхронизация с GitHub репозиторием
-- **Поддержка новых форматов** - совместимость с обновленной структурой данных граббера
+### 🚀 New Features
+- **Real-time Card Statistics Overlay** - Displays users/need/trade stats directly on card pages
+- **Automatic GitHub Database Sync** - Fetches latest card data from GitHub repository automatically
+- **Adaptive Statistics Display** - Dynamic sizing and styling based on data volume
+  - Compact mode for small values (0-50)
+  - Medium mode for normal values (51-200)
+  - Extended mode for large values (201+)
+- **Glassmorphism UI Design** - Modern semi-transparent interface with blur effects
+- **Smart Caching System** - Optimized performance for large datasets (29K+ cards)
+- **Multi-site Support** - Works on both animestars.org and asstars.tv
+- **Background Auto-updates** - Periodic synchronization with GitHub repository (every 2 hours)
+- **Extension Popup Interface** - Convenient management panel with database statistics
 
-### ⚡ Улучшения производительности
-- **IndexedDB оптимизация** - в 5x быстрее сохранение и загрузка данных
-- **Ленивая загрузка** - статистика загружается только при необходимости
-- **Кэширование запросов** - минимизация повторных обращений к API
-- **Оптимизация памяти** - эффективное управление данными в background script
+### ⚡ Performance Improvements
+- **IndexedDB Optimization** - 5x faster data saving and loading compared to localStorage
+- **Lazy Loading** - Statistics load only when needed to minimize resource usage
+- **Request Caching** - Minimizes redundant API calls with intelligent caching
+- **Memory Management** - Efficient data handling in background service worker
+- **Batch Processing** - Optimized bulk data operations for large card collections
 
-### 🎨 UI/UX улучшения
-- **Адаптивные размеры** - автоматическое масштабирование для разных объемов данных
-  - Компактный режим для малых значений (0-50)
-  - Средний режим для обычных значений (51-200)  
-  - Увеличенный режим для больших значений (201+)
-- **Цветовая индикация** - интуитивные цвета для разных типов статистики
-- **Улучшенная анимация** - плавные переходы и эффекты появления
-- **Responsive дизайн** - корректное отображение на разных разрешениях
+### 🎨 UI/UX Enhancements
+- **Color-coded Statistics** - Intuitive color indicators for different stat types
+  - 🟦 Blue for "Users" (card owners)
+  - 🟡 Yellow for "Need" (cards wanted)
+  - 🟢 Green for "Trade" (cards available for trade)
+- **Smooth Animations** - Fluid transitions and appearance effects
+- **Responsive Design** - Proper display across different screen resolutions
+- **Context-aware Positioning** - Smart overlay placement to avoid UI conflicts
+- **Visual Feedback** - Loading states and error handling with user-friendly messages
 
-### 🔧 Технические улучшения
-- **Manifest V3** - полная совместимость с новыми стандартами Chrome
-- **TypeScript 4.9+** - улучшенная типизация и безопасность кода
-- **Modern build system** - webpack 5 с оптимизацией для production
-- **ESLint + Prettier** - консистентный стиль кода
+### 🔧 Technical Features
+- **Manifest V3 Compliance** - Full compatibility with latest Chrome extension standards
+- **TypeScript 5.2+** - Enhanced type safety and developer experience
+- **Modern Build System** - Webpack 5 with production optimizations
+  - Code minification with Terser
+  - CSS optimization with CssMinimizerPlugin
+  - Automatic ZIP packaging for distribution
+- **Content Script Injection** - Seamless integration with target websites
+- **Service Worker Background** - Persistent data management and updates
+- **Cross-context Communication** - Reliable messaging between content scripts and background
 
-### 🐛 Исправления
-- **Фикс IndexedDB контекста** - решена проблема с изоляцией контекста в Manifest V3
-- **Память background script** - исправлены утечки памяти при длительной работе
-- **Обработка ошибок API** - улучшенная устойчивость к сбоям сети
-- **Совместимость с обновлениями сайта** - адаптация под изменения в HTML структуре
+### 🛡️ Security & Reliability
+- **Minimal Permissions** - Only requests necessary permissions for functionality
+- **Error Handling** - Robust error recovery and user feedback
+- **Rate Limiting** - Respectful API usage with GitHub rate limit compliance
+- **Data Validation** - Input sanitization and type checking
+- **Fallback Mechanisms** - Graceful degradation when services are unavailable
 
-## [1.2.0] - 2025-09-14
+### 🔍 Card Detection System
+- **Universal Card Selectors** - Supports multiple card layouts and formats:
+  - `.anime-cards__item-wrapper` - Main card grid
+  - `.trade__inventory-item` - Trading inventory
+  - `.trade__main-item` - Trade page items
+  - `.trade__item` - Additional trade elements
+  - `.trade-card` - Alternative trade format
+  - `.inventory-card` - User inventory cards
+  - `.history__body-item` - Transaction history
+- **Flexible ID Extraction** - Multiple methods for card identification
+- **Dynamic Content Support** - Works with both static and dynamically loaded content
 
-### 🚀 Добавлено
-- **GitHub интеграция** - автоматическая загрузка обновлений с репозитория
-- **Всплывающее окно** - удобный интерфейс для управления расширением
-- **Принудительное обновление** - возможность форсировать синхронизацию
-- **Статистика базы данных** - отображение информации о загруженных данных
+### � Database Management
+- **Local IndexedDB Storage** - Fast, reliable local data persistence
+- **Automated Updates** - Background synchronization with remote database
+- **Database Versioning** - Handles schema migrations and updates
+- **Conflict Resolution** - Smart merging of local and remote data
+- **Statistics Tracking** - Real-time database size and update information
 
-### ⚡ Улучшено
-- **Производительность** - оптимизация работы с большими базами данных
-- **Стабильность** - улучшенная обработка ошибок загрузки
-- **Кэширование** - локальное сохранение данных для offline работы
+### �️ Developer Tools
+- **ESLint + TypeScript** - Consistent code quality and style
+- **Modular Architecture** - Clean separation of concerns
+- **Debug Logging** - Comprehensive logging for troubleshooting
+- **Build Automation** - One-command production builds with `npm run build:prod`
+- **Hot Reload Development** - Fast iteration with `npm run dev`
 
-### 🔧 Изменено
-- **Структура проекта** - переход на модульную архитектуру
-- **API интеграция** - использование GitHub API вместо прямых ссылок
+### 🌐 Browser Compatibility
+- **Chrome 88+** - Minimum supported version
+- **Chromium-based browsers** - Edge, Brave, Opera support
+- **Manifest V3 exclusive** - No legacy Manifest V2 support
 
-## [1.1.0] - 2025-09-13
+### 📦 Distribution
+- **Automated ZIP Packaging** - Ready-to-publish extension archives
+- **Version Synchronization** - Automatic version naming from package.json
+- **Optimized Bundle Size** - Minified code and assets (~20KB total)
+- **Chrome Web Store Ready** - Meets all store requirements and guidelines
 
-### 🚀 Добавлено
-- **Автоматическая инъекция** - статистика появляется автоматически на страницах карт
-- **Стилизация** - красивое оформление статистических блоков
-- **Кэширование** - сохранение данных в локальном хранилище
+## [Planned Features]
 
-### ⚡ Улучшено
-- **Быстродействие** - оптимизация поиска карт в базе данных
-- **Надежность** - обработка случаев отсутствия данных
-- **Пользовательский опыт** - плавное появление статистики
+### 🔮 v2.1.0 (In Development)
+- **Filtering and Search** - Filter cards by various criteria
+- **Advanced Statistics** - Popularity change graphs and trends
+- **Theme Customization** - Light/dark themes + color settings
+- **Data Export** - Save statistics to files (CSV, JSON)
+- **Comparison Tools** - Side-by-side card statistics comparison
 
-### 🐛 Исправлено
-- **Дублирование элементов** - предотвращение множественной инъекции
-- **Конфликт стилей** - изоляция CSS от основного сайта
+### 🚀 v2.2.0 (Planned)
+- **Smart Notifications** - Alerts for new cards or price changes
+- **AI Recommendations** - Intelligent trading suggestions
+- **History Tracking** - Monitor popularity dynamics over time
+- **Market Analytics** - Advanced trading insights and trends
 
-## [1.0.0] - 2025-09-12
+## 🛠 For Developers
 
-### 🚀 Начальный релиз
-- **Базовая функциональность** - отображение статистики карт (users, need, trade)
-- **Content script** - инъекция данных в страницы animestars.org
-- **Простой дизайн** - минималистичное оформление статистических блоков
-- **Manifest V3** - современная архитектура расширения
+### Version Structure
+- **Major versions (X.0.0)** - Architectural changes and breaking updates
+- **Minor versions (X.Y.0)** - New features with backward compatibility
+- **Patches (X.Y.Z)** - Bug fixes and minor improvements
 
-### ⚙️ Технические особенности
-- **TypeScript** - типизированная разработка
-- **Webpack** - сборка и оптимизация кода
-- **CSS-in-JS** - стили компонентов
-- **Модульная архитектура** - разделение логики на компоненты
+### Release Process
+1. **Development** in feature branches
+2. **Code review** and testing
+3. **Merge** to main branch
+4. **Automated build** and testing
+5. **Release** and documentation update
 
-## [Планы на будущее]
-
-### 🔮 v2.1.0 (В разработке)
-- **Фильтры и поиск** - возможность фильтрации карт по различным критериям
-- **Расширенная статистика** - графики изменений популярности карт
-- **Темы оформления** - светлая/темная темы + настройки цветов
-- **Экспорт данных** - сохранение статистики в файлы
-
-### 🚀 v2.2.0 (Планируется)
-- **Уведомления** - алерты о новых картах или изменениях цен
-- **Сравнение карт** - инструмент сравнения статистики разных карт
-- **История изменений** - отслеживание динамики популярности
-- **Рекомендации** - ИИ-советы по обмену карт
-
-## 🛠 Для разработчиков
-
-### Структура версий
-- **Мажорные версии (X.0.0)** - кардинальные изменения архитектуры
-- **Минорные версии (X.Y.0)** - новые функции, обратная совместимость
-- **Патчи (X.Y.Z)** - исправления багов, мелкие улучшения
-
-### Процесс релиза
-1. **Разработка** в feature branches
-2. **Code review** и тестирование
-3. **Merge** в main branch
-4. **Автоматическая сборка** и тестирование
-5. **Релиз** и обновление документации
-
-### Совместимость
-- **Chrome 88+** - минимальная поддерживаемая версия
-- **Manifest V3** - только новый стандарт
-- **TypeScript 4.5+** - современные возможности языка
+### Compatibility
+- **Chrome 88+** - Minimum supported version
+- **Manifest V3 only** - Modern extension standard
+- **TypeScript 5.0+** - Latest language features
+- **Node.js 16+** - Development environment requirement

@@ -3,6 +3,7 @@
 > Chrome расширение для отображения статистики карт прямо на страницах animestars.org
 
 [![Chrome Web Store](https://img.shields.io/badge/Chrome-Extension-green.svg)](https://chrome.google.com/webstore)
+[![GitHub release](https://img.shields.io/github/v/release/hantYT/animestars-card-stats-ext?label=Download)](https://github.com/hantYT/animestars-card-stats-ext/releases/latest)
 [![TypeScript](https://img.shields.io/badge/TypeScript-4.9+-blue.svg)](https://www.typescriptlang.org/)
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-orange.svg)](https://developer.chrome.com/docs/extensions/mv3/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -36,10 +37,23 @@
 
 ## 🛠 Установка
 
-### Из Chrome Web Store (Рекомендуется)
+### 📦 Готовые релизы (Рекомендуется)
+
+**Самый простой способ для пользователей:**
+
+1. Перейдите на [страницу релизов](https://github.com/hantYT/animestars-card-stats-ext/releases)
+2. Скачайте файл `animestars-card-stats-v{version}.zip` из последнего релиза
+3. Распакуйте архив в любую папку
+4. Откройте `chrome://extensions/` в Chrome
+5. Включите "Режим разработчика" (Developer mode)
+6. Нажмите "Загрузить распакованное расширение" (Load unpacked)
+7. Выберите распакованную папку
+8. Готово! Расширение установлено и готово к работе
+
+### ⭐ Из Chrome Web Store
 *Скоро будет доступно*
 
-### Ручная установка для разработчиков
+### 🔧 Ручная сборка для разработчиков
 
 1. **Клонирование репозитория**
 ```bash
@@ -237,6 +251,18 @@ graph TB
 
 - 🐛 **Баги**: [GitHub Issues](https://github.com/hantYT/animestars-card-stats-ext/issues)
 - 💬 **Обсуждение**: [GitHub Discussions](https://github.com/hantYT/animestars-card-stats-ext/discussions)
+- 📦 **Релизы**: [GitHub Releases](https://github.com/hantYT/animestars-card-stats-ext/releases) - готовые сборки для установки
+
+## 🚀 Быстрый старт
+
+Хотите быстро попробовать расширение? 
+
+1. **[Скачайте последний релиз](https://github.com/hantYT/animestars-card-stats-ext/releases/latest)** 📦
+2. **Распакуйте архив** 📁
+3. **Загрузите в Chrome** (`chrome://extensions/` → "Загрузить распакованное") 🔧
+4. **Откройте animestars.org** и наслаждайтесь статистикой! 🎯
+
+**Подробная инструкция**: [QUICKSTART.md](QUICKSTART.md)
 
 ## 🙏 Благодарности
 
