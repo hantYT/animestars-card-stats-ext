@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AnimestarsCards Stats</title>
+  <style>
+    body {
+      width: 320px;
+      min-height: 200px;
+      margin: 0;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .header h1 {
+      margin: 0 0 8px;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .header p {
+      margin: 0;
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    .stats-section {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+      backdrop-filter: blur(10px);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .stat-item {
+      text-align: center;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+    }
+
+    .stat-number {
+      display: block;
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      opacity: 0.8;
+    }
+
+    .buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 13px;
+    }
+
+    .btn-primary {
+      background: #4CAF50;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #45a049;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-danger {
+      background: #f44336;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #d32f2f;
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .loading.active {
+      display: block;
+    }
+
+    .spinner {
+      width: 24px;
+      height: 24px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-top: 3px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 8px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .status {
+      font-size: 12px;
+      text-align: center;
+      margin-top: 12px;
+      opacity: 0.8;
+    }
+
+    .error {
+      background: rgba(244, 67, 54, 0.2);
+      border: 1px solid rgba(244, 67, 54, 0.5);
+      padding: 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .success {
+      background: rgba(76, 175, 80, 0.2);
+      border: 1px solid rgba(76, 175, 80, 0.5);
+      padding: 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .footer a {
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      font-size: 11px;
+    }
+
+    .footer a:hover {
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>AnimestarsCards Stats</h1>
+    <p>Статистика карт</p>
+  </div>
+
+  <div id="content">
+    <div class="stats-section">
+      <div class="stats-grid">
+        <div class="stat-item">
+          <span class="stat-number" id="cardsCount">-</span>
+          <span class="stat-label">Карт в базе</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number" id="lastUpdate">-</span>
+          <span class="stat-label">Обновлено</span>
+        </div>
+      </div>
+      
+      <div class="status" id="statusText">Загрузка информации...</div>
+    </div>
+
+    <div class="buttons">
+      <button class="btn-primary" id="checkUpdates">
+        Проверить обновления
+      </button>
+      <button class="btn-secondary" id="forceUpdate">
+        Принудительное обновление
+      </button>
+      <button class="btn-danger" id="clearDatabase">
+        Очистить базу данных
+      </button>
+      <button class="btn-secondary" id="openGitHub">
+        Открыть GitHub
+      </button>
+    </div>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div>Обновление базы данных...</div>
+  </div>
+
+  <div class="footer">
+    <a href="https://github.com/hantYT/animestars-card-stats-ext" target="_blank">
+      GitHub Repository
+    </a>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+{
+  "name": "animestars-card-stats",
+  "version": "1.0.0",
+  "description": "Browser extension that shows card statistics overlay on AnimestarsOrg",
+  "main": "dist/content.js",
+  "scripts": {
+    "build": "webpack --mode=production",
+    "build:prod": "node scripts/build-prod.js",
+    "dev": "webpack --mode=development --watch",
+    "clean": "rimraf dist"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.246",
+    "@typescript-eslint/eslint-plugin": "^6.7.4",
+    "@typescript-eslint/parser": "^6.7.4",
+    "archiver": "^7.0.1",
+    "copy-webpack-plugin": "^11.0.0",
+    "css-loader": "^6.8.1",
+    "css-minimizer-webpack-plugin": "^7.0.2",
+    "eslint": "^8.50.0",
+    "mini-css-extract-plugin": "^2.9.4",
+    "rimraf": "^5.0.1",
+    "terser-webpack-plugin": "^5.3.14",
+    "ts-loader": "^9.4.4",
+    "typescript": "^5.2.2",
+    "webpack": "^5.88.2",
+    "webpack-cli": "^5.1.4"
+  },
+  "keywords": [
+    "browser-extension",
+    "animestars",
+    "card-stats",
+    "overlay"
+  ],
+  "author": "AI Assistant",
+  "license": "MIT"
+}
