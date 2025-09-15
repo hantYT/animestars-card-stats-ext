@@ -44,6 +44,11 @@ class CardStatsOverlay {
       selector: '.history__body-item',
       dataIdAttribute: 'href',
       insertionMethod: 'append'
+    },
+    {
+      selector: '.lootbox__card', // Все карточки из лутбоксов (с любыми дополнительными классами)
+      dataIdAttribute: 'data-id',
+      insertionMethod: 'append'
     }
   ];
 
@@ -140,21 +145,33 @@ class CardStatsOverlay {
       });
 
       if (shouldProcess) {
-        const delay = isTradePageUpdate ? 300 : 100; // Больше времени для трейд-страниц
+        // Увеличиваем задержки для лучшей обработки динамического контента
+        const delay = isTradePageUpdate ? 500 : 200; 
         setTimeout(() => this.processExistingCards(), delay);
       }
     });
 
-    // Настройки observer с учетом трейд-страниц
+    // Настройки observer с улучшенным мониторингом
     const observerConfig = {
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ['class', 'data-loaded', 'data-updated', 'style'] // Атрибуты, которые часто меняются при AJAX загрузке
+      attributeFilter: ['class', 'data-loaded', 'data-updated', 'style', 'data-pack-id', 'data-id'] // Расширенный список атрибутов
     };
 
     observer.observe(document.body, observerConfig);
-    console.log('👀 DOM observer started with trade page support');
+    console.log('👀 DOM observer started with lootbox and trade page support');
+    
+    // Дополнительная проверка каждые 2 секунды для лутбоксов
+    if (window.location.pathname.includes('/pack/')) {
+      setInterval(() => {
+        const lootboxCards = document.querySelectorAll('.lootbox__card[data-id]');
+        if (lootboxCards.length > 0) {
+          console.log(`🎰 Periodic lootbox check: found ${lootboxCards.length} cards`);
+          this.processExistingCards();
+        }
+      }, 2000);
+    }
   }
 
   private isCardElement(element: Element): boolean {
@@ -164,39 +181,47 @@ class CardStatsOverlay {
   }
 
   private isTradePageContainer(element: Element): boolean {
-    // Проверяем, является ли это контейнером для трейд-карт
-    const tradeContainerSelectors = [
+    // Проверяем, является ли это контейнером для трейд-карт или лутбоксов
+    const containerSelectors = [
       '.trade__inventory',
       '.trade__main',
       '.trade__offers',
       '.trade__cards-list',
       '.trade-section',
       '[class*="trade"]',
-      '[id*="trade"]'
+      '[id*="trade"]',
+      // Добавляем селекторы для лутбоксов
+      '.lootbox__list',
+      '.lootbox__row',
+      '.lootbox__cards',
+      '[class*="lootbox"]',
+      '[data-pack-id]' // Контейнеры с pack-id
     ];
 
-    return tradeContainerSelectors.some(selector => 
+    return containerSelectors.some(selector => 
       element.matches(selector) || element.querySelector(selector)
     );
   }
 
   private isTradeRelatedElement(element: Element, attributeName: string | null): boolean {
-    // Проверяем, связано ли изменение атрибута с трейд-функциональностью
+    // Проверяем, связано ли изменение атрибута с функциональностью карт
     if (!attributeName) return false;
 
-    const tradeRelatedClasses = ['trade', 'card', 'inventory', 'loaded', 'updated'];
-    const tradeRelatedAttributes = ['class', 'data-loaded', 'data-updated', 'style'];
+    const cardRelatedClasses = ['trade', 'card', 'inventory', 'loaded', 'updated', 'lootbox', 'pack'];
+    const cardRelatedAttributes = ['class', 'data-loaded', 'data-updated', 'style', 'data-pack-id'];
 
-    // Проверяем URL страницы
-    const isTradePageUrl = window.location.pathname.includes('/trade/');
+    // Проверяем URL страницы (трейды или лутбоксы)
+    const isCardPageUrl = window.location.pathname.includes('/trade/') || 
+                         window.location.pathname.includes('/pack/') ||
+                         window.location.pathname.includes('/cards/');
     
-    if (!isTradePageUrl) return false;
+    if (!isCardPageUrl) return false;
 
     // Проверяем изменение релевантных атрибутов
-    if (tradeRelatedAttributes.includes(attributeName)) {
-      // Проверяем, содержит ли элемент трейд-связанные классы или карты
+    if (cardRelatedAttributes.includes(attributeName)) {
+      // Проверяем, содержит ли элемент карт-связанные классы или является картой
       const elementText = element.className + ' ' + element.tagName;
-      return tradeRelatedClasses.some(keyword => 
+      return cardRelatedClasses.some(keyword => 
         elementText.toLowerCase().includes(keyword.toLowerCase())
       ) || this.isCardElement(element);
     }

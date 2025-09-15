@@ -192,12 +192,58 @@
   font-size: 12px;
 }
 
-.trade__inventory-item .card-stats-overlay {
-  margin-top: 6px;
+/* Специальные стили для лутбоксов */
+.lootbox__card .card-stats-overlay {
+  position: relative;
+  bottom: auto;
+  left: auto;
+  right: auto;
+  margin-top: 8px;
   padding: 6px 8px;
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(10px) saturate(160%);
-  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  z-index: 10;
+}
+
+.lootbox__card .card-stats {
+  font-size: 11px;
+  gap: 4px;
+}
+
+.lootbox__card .card-stats span {
+  font-size: 11px;
+  padding: 2px 4px;
+  border-radius: 6px;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.lootbox__card .card-stats span i {
+  font-size: 10px;
+  min-width: 10px;
+}
+
+/* Улучшенные стили для трейдов */
+.trade__inventory-item .card-stats-overlay {
+  margin-top: 4px;
+  padding: 4px 6px;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+}
+
+.trade__inventory-item .card-stats {
+  font-size: 9px;
+  gap: 2px;
+}
+
+.trade__inventory-item .card-stats span {
+  font-size: 9px;
+  padding: 1px 3px;
+  font-weight: 600;
 }
 
 .trade__main-item .card-stats-overlay {
@@ -206,6 +252,26 @@
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(12px) saturate(180%);
   border-radius: 12px;
+}
+
+.trade__item .card-stats-overlay {
+  margin-top: 4px;
+  padding: 4px 6px;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+}
+
+.trade__item .card-stats {
+  font-size: 9px;
+  gap: 2px;
+}
+
+.trade__item .card-stats span {
+  font-size: 9px;
+  padding: 1px 3px;
+  font-weight: 600;
 }
 
 .history__body-item .card-stats-overlay {
@@ -256,6 +322,29 @@
 .anime-cards__item-wrapper:hover .card-stats span:nth-child(3) {
   background: linear-gradient(135deg, rgba(5, 150, 105, 0.35), rgba(16, 185, 129, 0.25));
   transform: scale(1.02);
+}
+
+/* Hover эффекты для лутбоксов */
+.lootbox__card:hover .card-stats-overlay {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(20px) saturate(200%);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lootbox__card:hover .card-stats span {
+  transform: scale(1.02);
+}
+
+/* Hover эффекты для трейдов */
+.trade__inventory-item:hover .card-stats-overlay,
+.trade__item:hover .card-stats-overlay {
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(12px) saturate(180%);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Уведомления с глассморфизмом */
