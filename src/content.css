@@ -1,293 +1,185 @@
-/* AnimestarsCards Stats Extension Styles */
+/* AnimestarsCards Stats Extension Styles - Unified Style System */
 
+/* Единый стиль для всех вариаций статистики - принудительные стили */
 .card-stats-overlay {
-  position: relative;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(12px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  margin-top: 8px;
-  padding: 6px 8px;
-  z-index: 10;
-  width: 100%;
-  box-sizing: border-box;
-  overflow: hidden;
+  position: relative !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(12px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  margin: 8px 0 0 0 !important;
+  padding: 8px !important;
+  z-index: 10 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  animation: fadeInGlass 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  pointer-events: auto !important;
+  /* Сброс всех возможных внешних стилей */
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
 }
 
-.card-stats {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  font-weight: 600;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  width: 100%;
-  gap: var(--stats-gap, 2px); /* Динамический отступ */
-  font-size: var(--stats-font-size, 11px); /* Динамический размер шрифта */
+/* Универсальная флекс-система для статистики - усиленная специфичность */
+.card-stats-overlay .card-stats {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  align-items: center !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+  font-weight: 600 !important;
+  text-rendering: optimizeLegibility !important;
+  -webkit-font-smoothing: antialiased !important;
+  gap: 6px !important;
+  font-size: 12px !important;
+  min-height: 32px !important;
+  padding: 4px !important;
+  box-sizing: border-box !important;
 }
 
-.card-stats span {
-  display: flex;
-  align-items: center;
-  gap: 3px; /* Фиксированный отступ между иконкой и текстом */
-  white-space: nowrap;
-  padding: 2px 4px;
-  border-radius: 6px;
-  font-weight: 600;
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  font-size: inherit; /* Наследует от .card-stats */
-  justify-content: center;
-  text-align: center;
-}
-
-/* Кликабельные элементы статистики */
-.card-stat-item {
+/* Универсальные элементы статистики - усиленная специфичность */
+.card-stats-overlay .card-stats span {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  white-space: nowrap !important;
+  padding: 6px 8px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  backdrop-filter: blur(8px) saturate(150%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  font-size: 12px !important;
+  text-align: center !important;
   cursor: pointer !important;
-  user-select: none;
-  position: relative;
-  overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none !important;
+  position: relative !important;
+  overflow: hidden !important;
+  line-height: 1.2 !important;
+  min-height: 28px !important;
+  box-sizing: border-box !important;
 }
 
-.card-stat-item:hover {
-  transform: translateY(-1px) scale(1.05);
-  backdrop-filter: blur(16px) saturate(200%);
-  padding: 3px 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  z-index: 15;
+/* Автоматические вариации расположения - усиленная специфичность */
+/* Когда все 3 элемента помещаются горизонтально (width >= 180px) */
+.card-stats-overlay .card-stats[data-layout="horizontal"] {
+  flex-direction: row !important;
+  justify-content: space-between !important;
 }
 
-.card-stat-item:active {
-  transform: translateY(0) scale(1.02);
-  transition: transform 0.1s ease;
+.card-stats-overlay .card-stats[data-layout="horizontal"] span {
+  flex: 1 1 calc(33.333% - 4px) !important;
+  max-width: calc(33.333% - 4px) !important;
 }
 
-/* Эффект ripple при клике */
-.card-stat-item:before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-  transition: width 0.3s ease, height 0.3s ease;
-  transform: translate(-50%, -50%);
-  z-index: -1;
+/* Когда 2 элемента сверху, 1 снизу (width 120-179px) */
+.card-stats-overlay .card-stats[data-layout="mixed"] {
+  flex-direction: row !important;
+  justify-content: center !important;
+  flex-wrap: wrap !important;
 }
 
-.card-stat-item:active:before {
-  width: 120%;
-  height: 120%;
+.card-stats-overlay .card-stats[data-layout="mixed"] span:nth-child(1),
+.card-stats-overlay .card-stats[data-layout="mixed"] span:nth-child(3) {
+  flex: 1 1 calc(50% - 3px) !important;
+  max-width: calc(50% - 3px) !important;
+  order: 1 !important;
 }
 
-.card-stats span i {
-  font-weight: bold;
-  filter: brightness(1.2) contrast(1.1);
-  min-width: 10px;
-  text-align: center;
-  font-size: 0.9em; /* Относительный размер иконки */
+.card-stats-overlay .card-stats[data-layout="mixed"] span:nth-child(2) {
+  flex: 1 1 100% !important;
+  max-width: 100% !important;
+  margin-top: 6px !important;
+  order: 2 !important;
 }
 
-/* Динамические классы для адаптации размеров */
-.card-stats--small {
-  --stats-font-size: 9px;
-  --stats-gap: 3px; /* Меньше места между блоками для больших чисел */
+/* Когда все элементы вертикально (width < 120px) */
+.card-stats-overlay .card-stats[data-layout="vertical"] {
+  flex-direction: column !important;
 }
 
-.card-stats--medium {
-  --stats-font-size: 11px;
-  --stats-gap: 5px; /* Средний отступ */
+.card-stats-overlay .card-stats[data-layout="vertical"] span {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  max-width: 100% !important;
 }
 
-.card-stats--large {
-  --stats-font-size: 13px;
-  --stats-gap: 8px; /* Больше места между блоками для маленьких чисел */
+.card-stats-overlay .card-stats[data-layout="vertical"] span:not(:last-child) {
+  margin-bottom: 4px !important;
 }
 
-/* Адаптация для очень больших чисел */
-.card-stats--compact {
-  --stats-font-size: 8px;
-  --stats-gap: 2px; /* Минимальный отступ между блоками */
+/* Hover и интерактивные эффекты - усиленная специфичность */
+.card-stats-overlay .card-stats span:hover {
+  transform: translateY(-2px) scale(1.05) !important;
+  backdrop-filter: blur(16px) saturate(200%) !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25) !important;
+  z-index: 15 !important;
 }
 
-.card-stats--compact .card-stats span {
-  padding: 1px 3px;
-  gap: 2px; /* Фиксированный отступ между иконкой и текстом */
+.card-stats-overlay .card-stats span:active {
+  transform: translateY(0) scale(1.02) !important;
+  transition: transform 0.1s ease !important;
 }
 
-.card-stats--compact .card-stats span i {
-  font-size: 0.8em;
-  min-width: 8px;
+.card-stats-overlay .card-stats span i {
+  font-weight: bold !important;
+  filter: brightness(1.2) contrast(1.1) !important;
+  min-width: 12px !important;
+  text-align: center !important;
+  font-size: 11px !important;
+  display: inline-block !important;
 }
 
-/* Приятные цвета для разных типов статистики с глассморфизмом */
-.card-stats span:nth-child(1),
-.card-stat-item[data-type="users"] {
-  color: #4e73ee; /* Владельцы - глубокий синий */
-  background: linear-gradient(135deg, rgba(30, 64, 175, 0.25), rgba(59, 130, 246, 0.15));
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+/* Цветовая схема для типов статистики - усиленная специфичность */
+.card-stats-overlay .card-stats span:nth-child(1) {
+  color: #4e73ee !important;
+  background: linear-gradient(135deg, rgba(30, 64, 175, 0.3), rgba(59, 130, 246, 0.2)) !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
 }
 
-.card-stats span:nth-child(2),
-.card-stat-item[data-type="need"] {
-  color: #f83939; /* Хотят - насыщенный красный */
-  background: linear-gradient(135deg, rgba(220, 38, 38, 0.25), rgba(239, 68, 68, 0.15));
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+.card-stats-overlay .card-stats span:nth-child(2) {
+  color: #f83939 !important;
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.3), rgba(239, 68, 68, 0.2)) !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
 }
 
-.card-stats span:nth-child(3),
-.card-stat-item[data-type="trade"] {
-  color: #4fecba; /* Обмен - изумрудный зеленый */
-  background: linear-gradient(135deg, rgba(5, 150, 105, 0.25), rgba(16, 185, 129, 0.15));
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+.card-stats-overlay .card-stats span:nth-child(3) {
+  color: #4fecba !important;
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.3), rgba(16, 185, 129, 0.2)) !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
 }
 
-/* Улучшенные hover эффекты для кликабельных элементов */
-.card-stat-item[data-type="users"]:hover {
-  background: linear-gradient(135deg, rgba(60, 99, 226, 0.4), rgba(59, 130, 246, 0.3));
-  color: #3b5bf0;
-  border-color: rgba(59, 130, 246, 0.4);
+/* Улучшенные hover эффекты по типам - усиленная специфичность */
+.card-stats-overlay .card-stats span:nth-child(1):hover {
+  background: linear-gradient(135deg, rgba(60, 99, 226, 0.5), rgba(59, 130, 246, 0.4)) !important;
+  color: #3b5bf0 !important;
+  border-color: rgba(59, 130, 246, 0.5) !important;
 }
 
-.card-stat-item[data-type="need"]:hover {
-  background: linear-gradient(135deg, rgba(236, 65, 65, 0.4), rgba(239, 68, 68, 0.3));
-  color: #e53e3e;
-  border-color: rgba(239, 68, 68, 0.4);
+.card-stats-overlay .card-stats span:nth-child(2):hover {
+  background: linear-gradient(135deg, rgba(236, 65, 65, 0.5), rgba(239, 68, 68, 0.4)) !important;
+  color: #e53e3e !important;
+  border-color: rgba(239, 68, 68, 0.5) !important;
 }
 
-.card-stat-item[data-type="trade"]:hover {
-  background: linear-gradient(135deg, rgba(5, 150, 105, 0.4), rgba(16, 185, 129, 0.3));
-  color: #00d9a7;
-  border-color: rgba(16, 185, 129, 0.4);
+.card-stats-overlay .card-stats span:nth-child(3):hover {
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.5), rgba(16, 185, 129, 0.4)) !important;
+  color: #00d9a7 !important;
+  border-color: rgba(16, 185, 129, 0.5) !important;
 }
 
-/* Адаптация для разных размеров карт с глассморфизмом */
-.anime-cards__item-wrapper .card-stats-overlay {
-  margin-top: 6px;
-  padding: 6px 8px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(10px) saturate(160%);
-}
-
-.anime-cards__item-wrapper .card-stats {
-  font-size: 12px;
-  gap: 6px;
-}
-
-.anime-cards__item-wrapper .card-stats span {
-  font-size: 12px;
-  padding: 2px 5px;
-}
-
-.anime-cards__item-wrapper .card-stats span i {
-  font-size: 12px;
-}
-
-/* Специальные стили для лутбоксов */
-.lootbox__card .card-stats-overlay {
-  position: relative;
-  bottom: auto;
-  left: auto;
-  right: auto;
-  margin-top: 8px;
-  padding: 6px 8px;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(12px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  z-index: 10;
-}
-
-.lootbox__card .card-stats {
-  font-size: 11px;
-  gap: 4px;
-}
-
-.lootbox__card .card-stats span {
-  font-size: 11px;
-  padding: 2px 4px;
-  border-radius: 6px;
-  font-weight: 600;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-.lootbox__card .card-stats span i {
-  font-size: 10px;
-  min-width: 10px;
-}
-
-/* Улучшенные стили для трейдов */
-.trade__inventory-item .card-stats-overlay {
-  margin-top: 4px;
-  padding: 4px 6px;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(8px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-}
-
-.trade__inventory-item .card-stats {
-  font-size: 9px;
-  gap: 2px;
-}
-
-.trade__inventory-item .card-stats span {
-  font-size: 9px;
-  padding: 1px 3px;
-  font-weight: 600;
-}
-
-.trade__main-item .card-stats-overlay {
-  margin-top: 8px;
-  padding: 8px 10px;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(12px) saturate(180%);
-  border-radius: 12px;
-}
-
-.trade__item .card-stats-overlay {
-  margin-top: 4px;
-  padding: 4px 6px;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(8px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-}
-
-.trade__item .card-stats {
-  font-size: 9px;
-  gap: 2px;
-}
-
-.trade__item .card-stats span {
-  font-size: 9px;
-  padding: 1px 3px;
-  font-weight: 600;
-}
-
-.history__body-item .card-stats-overlay {
-  margin-top: 4px;
-  padding: 6px 8px;
-  border-left: 3px solid rgba(107, 114, 128, 0.6);
-  border-radius: 0 10px 10px 0;
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(10px) saturate(160%);
-}
-
-/* Анимация появления с улучшенными эффектами */
-.card-stats-overlay {
-  animation: fadeInGlass 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
+/* Анимация появления */
 @keyframes fadeInGlass {
   from {
     opacity: 0;
@@ -301,133 +193,13 @@
   }
 }
 
-/* Ховер эффекты с улучшенным глассморфизмом */
-.anime-cards__item-wrapper:hover .card-stats-overlay {
-  background: rgba(255, 255, 255, 0.25);
-  backdrop-filter: blur(20px) saturate(200%);
-  transform: translateY(-1px);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.anime-cards__item-wrapper:hover .card-stats span:nth-child(1) {
-  background: linear-gradient(135deg, rgba(60, 99, 226, 0.35), rgba(59, 130, 246, 0.25));
-  transform: scale(1.02);
-}
-
-.anime-cards__item-wrapper:hover .card-stats span:nth-child(2) {
-  background: linear-gradient(135deg, rgba(236, 65, 65, 0.35), rgba(239, 68, 68, 0.25));
-  transform: scale(1.02);
-}
-
-.anime-cards__item-wrapper:hover .card-stats span:nth-child(3) {
-  background: linear-gradient(135deg, rgba(5, 150, 105, 0.35), rgba(16, 185, 129, 0.25));
-  transform: scale(1.02);
-}
-
-/* Hover эффекты для лутбоксов */
-.lootbox__card:hover .card-stats-overlay {
-  background: rgba(255, 255, 255, 0.25);
-  backdrop-filter: blur(20px) saturate(200%);
-  border-color: rgba(255, 255, 255, 0.3);
-  transform: translateY(-1px);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.lootbox__card:hover .card-stats span {
-  transform: scale(1.02);
-}
-
-/* Hover эффекты для трейдов */
-.trade__inventory-item:hover .card-stats-overlay,
-.trade__item:hover .card-stats-overlay {
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(12px) saturate(180%);
-  border-color: rgba(255, 255, 255, 0.2);
-  transform: translateY(-1px);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Уведомления с глассморфизмом */
-.animestars-notification {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  animation: slideInRight 0.3s ease-out;
-  backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-}
-
-.animestars-notification--success {
-  background: rgba(16, 185, 129, 0.8) !important;
-}
-
-.animestars-notification--error {
-  background: rgba(239, 68, 68, 0.8) !important;
-}
-
-@keyframes slideInRight {
-  from {
-    opacity: 0;
-    transform: translateX(100%);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
 /* Адаптивность для мобильных устройств */
 @media (max-width: 768px) {
   .card-stats {
-    font-size: 11px;
-    gap: 4px;
+    font-size: 10px;
   }
   
   .card-stats span {
-    padding: 2px 4px;
-    font-size: 11px;
+    padding: 3px 5px;
   }
-  
-  .card-stats span i {
-    font-size: 11px;
-  }
-}
-
-/* Специальные индикаторы для высоких значений */
-.card-stats span[data-high-value="true"] {
-  font-weight: 700;
-  position: relative;
-}
-
-.card-stats span[data-high-value="true"]:after {
-  content: "";
-  position: absolute;
-  top: -2px;
-  right: -2px;
-  font-size: 8px;
-}
-
-/* Дополнительные стили для красивых цифр */
-.card-stats span {
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.025em;
-}
-
-/* Улучшенная типографика для цифр */
-.card-stats span:before {
-  font-weight: 700;
-}
-
-/* Стили для иконок FontAwesome */
-.card-stats span .fa,
-.card-stats span .fas,
-.card-stats span .far {
-  margin-right: 2px;
-  opacity: 0.9;
-  transition: opacity 0.2s ease;
-}
-
-.card-stats span:hover .fa,
-.card-stats span:hover .fas,
-.card-stats span:hover .far {
-  opacity: 1;
 }

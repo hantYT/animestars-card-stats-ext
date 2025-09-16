@@ -197,6 +197,11 @@ class BackgroundService {
       console.log('📨 Background received message:', message.type, message.data);
       
       switch (message.type) {
+        case 'ping':
+          console.log('🏓 Ping received, service worker is alive');
+          sendResponse({ success: true });
+          break;
+
         case 'getDatabasesList':
           console.log('🔄 Get databases list requested');
           try {
@@ -423,6 +428,23 @@ class BackgroundService {
           const currentInfo = await this.dbService.getDatabaseInfo();
           const needsUpdate = await this.githubService.checkForUpdates(currentInfo);
           sendResponse({ needsUpdate });
+          break;
+
+        case 'findCardByImage':
+          console.log('🔍 Finding card by image URL:', message.data?.imageUrl);
+          if (message.data && message.data.imageUrl) {
+            try {
+              const cardId = await this.dbService.findCardByImageUrl(message.data.imageUrl);
+              console.log('✅ Found card ID by image:', cardId);
+              sendResponse({ success: true, cardId });
+            } catch (error) {
+              console.error('❌ Error finding card by image:', error);
+              sendResponse({ success: false, cardId: null });
+            }
+          } else {
+            console.warn('⚠️ Missing imageUrl in findCardByImage request');
+            sendResponse({ success: false, cardId: null });
+          }
           break;
 
         default:

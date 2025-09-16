@@ -59,4 +59,5 @@ export interface CardSelector {
   dataNameAttribute?: string;
   insertionMethod: 'append' | 'prepend' | 'before' | 'after';
   targetSelector?: string; // Где именно вставлять оверлей внутри элемента
+  extractFromImage?: boolean; // Извлекать ID из URL изображения
 }
