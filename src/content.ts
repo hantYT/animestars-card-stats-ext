@@ -185,10 +185,14 @@ class CardStatsOverlay {
         this.processVisibleCards(cardsToProcess);
       }
       
-      // Запускаем полную переобработку для догрузки пропущенного
-      setTimeout(() => {
-        this.processExistingCardsDebounced();
-      }, 1000);
+      // Запускаем полную переобработку для догрузки пропущенного (кроме unlimited страниц)
+      if (!this.isUnlimitedPage()) {
+        setTimeout(() => {
+          this.processExistingCardsDebounced();
+        }, 1000);
+      } else {
+        console.log('🚀 Skipping reprocessing on unlimited page (trade/remelt)');
+      }
     }
   }
 
@@ -806,6 +810,12 @@ class CardStatsOverlay {
   }
 
   private clearAllProcessedFlags(): void {
+    // Пропускаем очистку флагов на unlimited страницах (трейды и ремелт)
+    if (this.isUnlimitedPage()) {
+      console.log('🚀 Skipping flag clearing on unlimited page (trade/remelt)');
+      return;
+    }
+    
     // Очищаем все флаги обработки на странице для полной переобработки
     const allProcessedElements = document.querySelectorAll('[data-animestars-processed]');
     allProcessedElements.forEach(el => {
