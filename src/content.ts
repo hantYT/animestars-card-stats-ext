@@ -21,10 +21,22 @@ class CardStatsOverlay {
   // Кэширование для ускорения
   private cardIdCache: Map<string, number> = new Map(); // URL -> cardId
   private statsCache: Map<number, any> = new Map(); // cardId -> stats
+  private processingIds: Set<string> = new Set(); // Защита от дублирования remelt карт
+  
+  // Navigation debug properties
+  private lastNavigationStart: number = 0;
+  private navigationCounter: number = 0;
 
   // Оптимизация обработки
   private lastProcessTime: number = 0;
   private readonly PROCESS_DEBOUNCE_DELAY = 500; // Увеличили задержку для реального debouncing
+
+  // Система отслеживания активности пользователя
+  private isUserActive = true;
+  private userInactivityTimer: number | null = null;
+  private readonly USER_INACTIVITY_TIMEOUT = 30000; // 30 секунд неактивности
+  private wasProcessingPaused = false;
+  private pendingCards: Set<HTMLElement> = new Set(); // Карты, ожидающие обработки
 
   // Селекторы для разных типов карт на сайте
   private cardSelectors: CardSelector[] = [
@@ -71,6 +83,13 @@ class CardStatsOverlay {
       extractFromImage: true // Lootbox cards need image URL lookup
     },
     {
+      selector: '.remelt__inventory-item img[src*="/uploads/cards_image/"]', // Карточки на страницах remelt
+      dataIdAttribute: 'src',
+      insertionMethod: 'append',
+      targetSelector: '.remelt__inventory-item', // Вставляем в родительский элемент
+      extractFromImage: true // Используем URL изображения для поиска в БД
+    },
+    {
       selector: '.owl-item a[href*="/cards/users/?id="]', // Карточки в owl-carousel
       dataIdAttribute: 'href',
       insertionMethod: 'append'
@@ -87,6 +106,90 @@ class CardStatsOverlay {
   constructor() {
     this.githubService = new GitHubService();
     this.startCleanupTimer();
+    this.setupUserActivityTracking();
+  }
+
+  private setupUserActivityTracking(): void {
+    // События активности пользователя
+    const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    
+    activityEvents.forEach(event => {
+      document.addEventListener(event, () => this.handleUserActivity(), { passive: true });
+    });
+
+    // События смены видимости страницы
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        this.handleUserReturned();
+      } else {
+        this.handleUserLeft();
+      }
+    });
+
+    console.log('👁️ User activity tracking set up');
+  }
+
+  /**
+   * Проверяет, находимся ли мы на странице без лимита оверлеев (трейды и ремелт)
+   */
+  private isUnlimitedPage(): boolean {
+    const path = window.location.pathname;
+    return path.includes('/trade/') || path.includes('/cards_remelt/');
+  }
+
+  private handleUserActivity(): void {
+    if (!this.isUserActive) {
+      console.log('🔄 User became active, resuming processing');
+      this.isUserActive = true;
+      this.resumeProcessing();
+    }
+
+    // Сбрасываем таймер неактивности
+    if (this.userInactivityTimer) {
+      clearTimeout(this.userInactivityTimer);
+    }
+
+    this.userInactivityTimer = window.setTimeout(() => {
+      this.handleUserInactivity();
+    }, this.USER_INACTIVITY_TIMEOUT);
+  }
+
+  private handleUserInactivity(): void {
+    console.log('😴 User inactive, pausing processing');
+    this.isUserActive = false;
+    this.wasProcessingPaused = true;
+  }
+
+  private handleUserLeft(): void {
+    console.log('📴 User switched tab/minimized, pausing processing');
+    this.isUserActive = false;
+    this.wasProcessingPaused = true;
+  }
+
+  private handleUserReturned(): void {
+    console.log('📱 User returned to tab, resuming processing');
+    this.isUserActive = true;
+    this.resumeProcessing();
+  }
+
+  private resumeProcessing(): void {
+    if (this.wasProcessingPaused) {
+      console.log('🔄 Resuming processing after pause');
+      this.wasProcessingPaused = false;
+      
+      // Обрабатываем отложенные карты
+      if (this.pendingCards.size > 0) {
+        console.log(`📦 Processing ${this.pendingCards.size} pending cards`);
+        const cardsToProcess = Array.from(this.pendingCards);
+        this.pendingCards.clear();
+        this.processVisibleCards(cardsToProcess);
+      }
+      
+      // Запускаем полную переобработку для догрузки пропущенного
+      setTimeout(() => {
+        this.processExistingCardsDebounced();
+      }, 1000);
+    }
   }
 
   async init(): Promise<void> {
@@ -202,6 +305,7 @@ class CardStatsOverlay {
           .map(entry => entry.target as HTMLElement);
         
         if (visibleCards.length > 0) {
+          console.log(`👀 IntersectionObserver: ${visibleCards.length} cards became visible`);
           this.processVisibleCards(visibleCards);
         }
       },
@@ -214,9 +318,22 @@ class CardStatsOverlay {
   }
 
   private async processVisibleCards(cards: HTMLElement[]): Promise<void> {
+    // Проверяем активность пользователя
+    if (!this.isUserActive) {
+      console.log('😴 User inactive, adding cards to pending queue');
+      cards.forEach(card => this.pendingCards.add(card));
+      return;
+    }
+
     // Обрабатываем все видимые карты параллельно для максимальной скорости
     await Promise.all(
       cards.map(async (cardElement) => {
+        // Повторно проверяем активность для каждой карты
+        if (!this.isUserActive) {
+          this.pendingCards.add(cardElement);
+          return;
+        }
+
         // Найдем подходящий селектор
         const matchingSelector = this.cardSelectors.find(selector => 
           cardElement.matches(selector.selector)
@@ -247,10 +364,19 @@ class CardStatsOverlay {
       return; // Слишком частые вызовы
     }
     this.lastProcessTime = now;
+
+    // Проверяем активность пользователя
+    if (!this.isUserActive) {
+      console.log('😴 User inactive, skipping processExistingCards');
+      return;
+    }
     
     // Используем debouncing для избежания избыточных вызовов
     setTimeout(() => {
-      this.processExistingCards();
+      // Повторно проверяем активность перед обработкой
+      if (this.isUserActive) {
+        this.processExistingCards();
+      }
     }, this.PROCESS_DEBOUNCE_DELAY);
   }
 
@@ -273,12 +399,13 @@ class CardStatsOverlay {
   private setupNavigationTriggers(): void {
     console.log(`🎯 Checking URL for navigation triggers: ${window.location.pathname}`);
     
-    // Проверяем, что мы на trade странице или lootbox странице
+    // Проверяем, что мы на trade, lootbox или remelt странице
     const isTradePageUrl = window.location.pathname.includes('/trade/');
     const isLootboxPageUrl = window.location.pathname.includes('/pack/');
+    const isRemeltPageUrl = window.location.pathname.includes('/cards_remelt/');
     
-    if (!isTradePageUrl && !isLootboxPageUrl) {
-      console.log('❌ Not a trade or lootbox page, skipping navigation triggers');
+    if (!isTradePageUrl && !isLootboxPageUrl && !isRemeltPageUrl) {
+      console.log('❌ Not a trade, lootbox, or remelt page, skipping navigation triggers');
       return;
     }
 
@@ -296,34 +423,24 @@ class CardStatsOverlay {
         '.card-trade-list__pagination-item'  // Любые элементы пагинации
       ];
 
-      // Добавляем обработчики для всех триггеров
-      triggerSelectors.forEach(selector => {
-        console.log(`🎯 Adding trigger for: ${selector}`);
-        
-        // Проверяем, есть ли элементы сейчас
-        const existingElements = document.querySelectorAll(selector);
-        console.log(`🔍 Found ${existingElements.length} existing elements for ${selector}`);
-        
-        // Используем event delegation для динамических элементов
-        document.addEventListener('click', (event) => {
-          const target = event.target as Element;
-          console.log(`🖱️ Click detected on element: ${target.tagName}.${target.className}`);
-          
-          if (target.matches(selector) || target.closest(selector)) {
-            console.log(`🎯 Navigation trigger activated: ${selector}`);
-            
-            // Добавляем небольшую задержку для завершения навигации
-            setTimeout(() => {
-              this.handleNavigationTrigger();
-            }, 500);
-          }
-        });
-      });
+      this.setupTriggers(triggerSelectors);
+    } else if (isRemeltPageUrl) {
+      console.log('🎯 Setting up navigation triggers for remelt page');
 
-      console.log(`✅ Navigation triggers set up for ${triggerSelectors.length} selectors`);
-    }
-    
-    if (isLootboxPageUrl) {
+      // Селекторы кнопок навигации и фильтров для remelt page
+      const triggerSelectors = [
+        '#prev_filter_page',        // Предыдущая страница
+        '#next_filter_page',        // Следующая страница
+        '#info_filter_page',        // Информация о странице
+        '#choose_filter_page',      // Селектор выбора страницы
+        '.card-filter-list__pagination-item',  // Любые элементы пагинации
+        '.remelt__rank-item',       // Кнопки фильтра по рангу (A, B, C, D, E, Все)
+        '.remelt__lock-item',       // Кнопки блокировки/разблокировки
+        '.category-type'            // Селект сортировки (по дате/названию)
+      ];
+
+      this.setupTriggers(triggerSelectors);
+    } else if (isLootboxPageUrl) {
       console.log('🎰 Setting up lootbox card click triggers');
       
       // Обработчик кликов по картам в лутбоксах
@@ -351,8 +468,130 @@ class CardStatsOverlay {
     }
   }
 
+  private setupTriggers(triggerSelectors: string[]): void {
+    // Сохраняем селекторы для использования в едином обработчике
+    this.activeTriggerSelectors = triggerSelectors;
+    
+    // Добавляем один обработчик для всех селекторов
+    console.log(`🎯 Setting up unified trigger handler for ${triggerSelectors.length} selectors`);
+    
+    triggerSelectors.forEach(selector => {
+      console.log(`🎯 Adding trigger for: ${selector}`);
+      const existingElements = document.querySelectorAll(selector);
+      console.log(`🔍 Found ${existingElements.length} existing elements for ${selector}`);
+    });
+
+    // Убираем старые обработчики если есть
+    if (this.clickHandler) {
+      document.removeEventListener('click', this.clickHandler);
+    }
+    if (this.changeHandler) {
+      document.removeEventListener('change', this.changeHandler);
+    }
+
+    // Единый обработчик кликов
+    this.clickHandler = (event: Event) => {
+      const target = event.target as Element;
+      let matchedSelector: string | null = null;
+      
+      // Ищем первый подходящий селектор
+      for (const selector of this.activeTriggerSelectors) {
+        if (target.matches(selector) || target.closest(selector)) {
+          matchedSelector = selector;
+          break;
+        }
+      }
+      
+      if (matchedSelector) {
+        console.log(`🎯 Navigation trigger activated: ${matchedSelector}`);
+        
+        // Для remelt фильтров даем больше времени на AJAX
+        let delay = 500;
+        if (matchedSelector === '.remelt__rank-item' || matchedSelector === '.remelt__lock-item') {
+          delay = 1000;
+        }
+        
+        setTimeout(() => {
+          this.handleNavigationTrigger();
+        }, delay);
+      }
+    };
+
+    // Единый обработчик изменений для select элементов
+    this.changeHandler = (event: Event) => {
+      const target = event.target as Element;
+      let matchedSelector: string | null = null;
+      
+      for (const selector of this.activeTriggerSelectors) {
+        if ((selector.includes('select') || selector === '#choose_filter_page' || selector === '.category-type') &&
+            (target.matches(selector) || target.closest(selector))) {
+          matchedSelector = selector;
+          break;
+        }
+      }
+      
+      if (matchedSelector) {
+        console.log(`🎯 Select trigger activated: ${matchedSelector}`);
+        const delay = matchedSelector === '.category-type' ? 1000 : 500;
+        setTimeout(() => {
+          this.handleNavigationTrigger();
+        }, delay);
+      }
+    };
+
+    document.addEventListener('click', this.clickHandler);
+    document.addEventListener('change', this.changeHandler);
+
+    console.log(`✅ Navigation triggers set up for ${triggerSelectors.length} selectors`);
+  }
+
+  private isNavigationProcessing: boolean = false;
+  private navigationTimeout: number | null = null;
+  private activeTriggerSelectors: string[] = [];
+  private clickHandler: ((event: Event) => void) | null = null;
+  private changeHandler: ((event: Event) => void) | null = null;
+  
   private handleNavigationTrigger(): void {
-    console.log('🔄 Navigation trigger: clearing state and regenerating stats');
+    const timestamp = Date.now();
+    console.log(`🔄 Navigation trigger called at ${timestamp}`);
+    
+    // Если уже идет обработка, ждем немного и повторяем
+    if (this.isNavigationProcessing) {
+      console.log(`🔄 Navigation trigger queued, waiting for current process to complete (started at ${this.lastNavigationStart})`);
+      
+      // Очередь на повторный вызов через небольшую задержку
+      if (this.navigationTimeout) {
+        clearTimeout(this.navigationTimeout);
+      }
+      
+      this.navigationTimeout = window.setTimeout(() => {
+        console.log('🔄 Retrying queued navigation trigger');
+        this.handleNavigationTrigger();
+      }, 300);
+      
+      return;
+    }
+    
+    this.isNavigationProcessing = true;
+    this.lastNavigationStart = timestamp;
+    this.navigationCounter = (this.navigationCounter || 0) + 1;
+    
+    console.log(`🔄 Navigation trigger #${this.navigationCounter}: clearing state and regenerating stats`);
+    
+    // Автоматический сброс флага через максимальное время
+    const maxProcessingTime = window.setTimeout(() => {
+      console.log(`⏰ Navigation processing #${this.navigationCounter} timeout, resetting flag (was running for ${Date.now() - timestamp}ms)`);
+      this.isNavigationProcessing = false;
+    }, 5000);
+    
+    const resetFlag = () => {
+      clearTimeout(maxProcessingTime);
+      const duration = Date.now() - timestamp;
+      console.log(`✅ Navigation processing #${this.navigationCounter} completed in ${duration}ms`);
+      this.isNavigationProcessing = false;
+    };
+    
+    const isRemeltPage = window.location.pathname.includes('/cards_remelt/');
     
     // Очищаем все флаги обработки
     console.log('🧹 Clearing all processed flags...');
@@ -362,14 +601,46 @@ class CardStatsOverlay {
     console.log('🗑️ Removing all stats overlays...');
     this.removeAllStatsOverlays();
     
-    // Очищаем очереди обработки
-    console.log('🔄 Clearing processing queues...');
-    
-    // Принудительно запускаем обработку карточек через debouncing
-    console.log('⚡ Triggering card processing...');
-    setTimeout(() => {
-      this.processExistingCardsDebounced();
-    }, 100);
+    // Для remelt страниц добавляем дополнительную очистку
+    if (isRemeltPage) {
+      console.log('🎯 Remelt page detected - performing deep cleanup...');
+      
+      // Очищаем защиту от дублирования
+      this.processingIds.clear();
+      
+      // Очищаем флаги наблюдения используя ТОЧНО ТАКОЙ ЖЕ селектор как в processExistingCards
+      const remeltImages = document.querySelectorAll('.remelt__inventory-item img[src*="/uploads/cards_image/"]');
+      let totalImgsCleared = 0;
+      
+      console.log(`🔍 DEBUG: Found ${remeltImages.length} images with selector`);
+      
+      remeltImages.forEach((img, index) => {
+        const hadProcessed = img.hasAttribute('data-animestars-processed');
+        const hadObserving = img.hasAttribute('data-animestars-observing');
+        
+        if (index < 3) { // Логируем первые 3 элемента для отладки
+          console.log(`🔍 DEBUG img[${index}]: processed=${hadProcessed}, observing=${hadObserving}, src=${(img as HTMLImageElement).src}`);
+        }
+        
+        img.removeAttribute('data-animestars-processed');
+        img.removeAttribute('data-animestars-observing');
+        if (hadProcessed || hadObserving) {
+          totalImgsCleared++;
+        }
+      });
+      
+      console.log(`🧹 Deep cleaned ${remeltImages.length} remelt cards, cleared flags from ${totalImgsCleared} images`);
+      
+      // Для remelt просто сбрасываем флаг - обработка уже идет в основном потоке
+      resetFlag();
+    } else {
+      // Обычная обработка для других страниц (включая trade)
+      setTimeout(() => {
+        console.log(`⚡ Triggering card processing for navigation #${this.navigationCounter}...`);
+        this.processExistingCardsDebounced();
+        resetFlag();
+      }, 100);
+    }
   }
 
   private removeAllStatsOverlays(): void {
@@ -378,6 +649,13 @@ class CardStatsOverlay {
       overlay.remove();
     });
     console.log(`🗑️ Removed ${overlays.length} existing stats overlays`);
+  }
+
+  private forceProcessAllCards(): void {
+    console.log('🚀 Force processing all cards...');
+    
+    // Принудительно обрабатываем все карты
+    this.processExistingCards();
   }
 
   private async checkAndUpdateDatabase(): Promise<void> {
@@ -444,13 +722,13 @@ class CardStatsOverlay {
           });
         }
         
-        // Отслеживаем удаление элементов для очистки флагов
+        // Отслеживаем удаление элементов для очистки флагов (только для значимых контейнеров)
         if (mutation.type === 'childList' && mutation.removedNodes.length > 0) {
           Array.from(mutation.removedNodes).forEach((node) => {
             if (node.nodeType === Node.ELEMENT_NODE) {
               const element = node as Element;
-              if (this.isCardElement(element) || this.hasCardsInside(element)) {
-                // Очищаем флаги у удаленных элементов
+              // Очищаем флаги только у больших контейнеров, не у отдельных карт
+              if (this.hasCardsInside(element) && (element.children.length > 5 || element.classList.contains('trade__inventory'))) {
                 this.clearProcessedFlags(element);
               }
             }
@@ -533,7 +811,17 @@ class CardStatsOverlay {
     allProcessedElements.forEach(el => {
       el.removeAttribute('data-animestars-processed');
     });
-    console.log(`🧹 Cleared ${allProcessedElements.length} processed flags for reprocessing`);
+    
+    // Также очищаем флаги наблюдения
+    const allObservingElements = document.querySelectorAll('[data-animestars-observing]');
+    allObservingElements.forEach(el => {
+      el.removeAttribute('data-animestars-observing');
+    });
+    
+    // Очищаем кэши для полной переобработки
+    this.pendingCards.clear();
+    
+    console.log(`🧹 Cleared ${allProcessedElements.length} processed flags and ${allObservingElements.length} observing flags for reprocessing`);
   }
 
   private isTradePageContainer(element: Element): boolean {
@@ -636,6 +924,8 @@ class CardStatsOverlay {
     
     if (path.includes('/trade/')) {
       return 'trade';
+    } else if (path.includes('/cards_remelt/')) {
+      return 'remelt';
     } else if (path.includes('/cards/')) {
       return 'cards catalog';
     } else if (path.includes('/history/')) {
@@ -648,24 +938,56 @@ class CardStatsOverlay {
   }
 
   private async processExistingCards(): Promise<void> {
-    if (!this.isInitialized || !this.intersectionObserver) return;
+    if (!this.isInitialized || !this.intersectionObserver) {
+      console.log('⚠️ processExistingCards: not initialized or no observer');
+      return;
+    }
+
+    const isRemeltPage = window.location.pathname.includes('/cards_remelt/');
+    console.log(`🔍 processExistingCards: Starting for ${isRemeltPage ? 'remelt' : 'other'} page`);
+
+    let totalElements = 0;
+    let addedToObserver = 0;
 
     // Находим все элементы карт и добавляем их в observer для ленивой загрузки
     for (const selector of this.cardSelectors) {
       const elements = document.querySelectorAll(selector.selector);
+      totalElements += elements.length;
+      
+      if (elements.length > 0) {
+        console.log(`🔍 Found ${elements.length} elements for selector: ${selector.selector}`);
+      }
       
       elements.forEach(element => {
         const htmlElement = element as HTMLElement;
         
-        // Добавляем в observer только если еще не обрабатывается и нет статистики
-        if (!htmlElement.hasAttribute('data-animestars-observing') && 
-            !htmlElement.querySelector('.card-stats-overlay')) {
+        // Для remelt страниц более агрессивная обработка
+        if (isRemeltPage && selector.selector.includes('remelt__inventory-item')) {
+          // Проверяем, есть ли overlay, игнорируя флаги
+          const hasOverlay = htmlElement.querySelector('.card-stats-overlay');
           
-          htmlElement.setAttribute('data-animestars-observing', 'true');
-          this.intersectionObserver!.observe(htmlElement);
+          if (!hasOverlay) {
+            // Сбрасываем флаги и добавляем в observer
+            htmlElement.removeAttribute('data-animestars-observing');
+            htmlElement.removeAttribute('data-animestars-processed');
+            htmlElement.setAttribute('data-animestars-observing', 'true');
+            this.intersectionObserver!.observe(htmlElement);
+            addedToObserver++;
+          }
+        } else {
+          // Обычная обработка для других страниц
+          if (!htmlElement.hasAttribute('data-animestars-observing') && 
+              !htmlElement.querySelector('.card-stats-overlay')) {
+            
+            htmlElement.setAttribute('data-animestars-observing', 'true');
+            this.intersectionObserver!.observe(htmlElement);
+            addedToObserver++;
+          }
         }
       });
     }
+    
+    console.log(`🔍 processExistingCards: Found ${totalElements} total elements, added ${addedToObserver} to observer`);
   }
 
   private getCardDataFromElement(element: HTMLElement): CardElement | null {
@@ -711,37 +1033,15 @@ class CardStatsOverlay {
           const cardId = await this.findCardIdByImageUrlAsync(src);
           if (cardId) {
             return cardId;
-          } else {
-            console.log(`❌ No card found for image: ${src}`);
           }
           
-          // Fallback: извлекаем ID из URL с помощью нескольких паттернов
-          let extractedId: number | null = null;
+          console.log(`⚠️ Card not found in DB for image: ${src}`);
           
-          // Паттерн 1: /uploads/cards_image/12345/rank/filename.webp
-          let match = src.match(/\/uploads\/cards_image\/(\d+)\//);
-          if (match) {
-            extractedId = parseInt(match[1], 10);
-          } else {
-            // Паттерн 2: /cards_image/12345/
-            match = src.match(/\/cards_image\/(\d+)\//);
-            if (match) {
-              extractedId = parseInt(match[1], 10);
-            } else {
-              // Паттерн 3: имя файла содержит ID
-              match = src.match(/\/(\d+)-[^\/]*\.(webp|jpg|png)$/);
-              if (match) {
-                extractedId = parseInt(match[1], 10);
-              }
-            }
-          }
-          
-          if (extractedId) {
-            // Fallback extraction успешен
-          } else {
-            console.warn(`❌ Failed to extract card ID from URL: ${src}`);
-          }
-          return extractedId;
+          // ❌ НЕ ИСПОЛЬЗУЕМ FALLBACK для URL изображений!
+          // Числа в URL - это ID аниме, а не карты
+          console.log(`   Reason: Numbers in image URL are anime IDs, not card IDs`);
+          console.log(`   This means either: 1) Card is new and not in DB yet, 2) Image URL changed`);
+          return null; // Просто пропускаем карту без обработки
         }
       }
       return null;
@@ -838,9 +1138,15 @@ class CardStatsOverlay {
 
   private async addStatsOverlay(card: CardElement): Promise<void> {
     try {
-      // Проверяем ограничения ресурсов
-      if (this.currentOverlaysCount >= this.MAX_TOTAL_OVERLAYS) {
+      // Проверяем ограничения ресурсов (кроме страниц трейдов и ремелт)
+      const isUnlimited = this.isUnlimitedPage();
+      if (!isUnlimited && this.currentOverlaysCount >= this.MAX_TOTAL_OVERLAYS) {
         return;
+      }
+      
+      // Лог для страниц без лимита
+      if (isUnlimited && this.currentOverlaysCount === this.MAX_TOTAL_OVERLAYS) {
+        console.log(`🚀 Unlimited mode: No overlay limit on trade/remelt pages (current: ${this.currentOverlaysCount})`);
       }
 
       // Проверяем, что элемент все еще в DOM
@@ -848,10 +1154,48 @@ class CardStatsOverlay {
         return;
       }
 
+      // Усиленная проверка для remelt страниц
+      const isRemeltPage = window.location.pathname.includes('/cards_remelt/');
+      if (isRemeltPage) {
+        // Для remelt создаём уникальный идентификатор на основе изображения
+        const imgElement = card.element.querySelector('img') as HTMLImageElement;
+        if (imgElement && imgElement.src) {
+          const imageId = imgElement.src.split('/').pop() || '';
+          const processingKey = `remelt-${imageId}`;
+          
+          // Проверяем глобальную защиту от дублирования
+          if (this.processingIds.has(processingKey)) {
+            console.log(`🚫 Remelt duplicate protection: ${processingKey} already processing`);
+            return;
+          }
+          
+          // Устанавливаем защиту
+          this.processingIds.add(processingKey);
+          
+          // Очищаем защиту через 5 секунд
+          setTimeout(() => {
+            this.processingIds.delete(processingKey);
+          }, 5000);
+        }
+      }
+
       // Проверяем, есть ли уже статистика на этой карточке
-      if (card.element.querySelector('.card-stats-overlay') || 
-          card.element.hasAttribute('data-animestars-processed')) {
+      const existingOverlay = card.element.querySelector('.card-stats-overlay');
+      const hasProcessedFlag = card.element.hasAttribute('data-animestars-processed');
+      if (existingOverlay || hasProcessedFlag) {
+        console.log(`⚠️ Overlay already exists or card already processed, skipping...`);
+        console.log(`   - Existing overlay: ${!!existingOverlay}`);
+        console.log(`   - Has processed flag: ${hasProcessedFlag}`);
+        console.log(`   - Element tag: ${card.element.tagName}`);
+        console.log(`   - Element src: ${(card.element as any).src || 'no src'}`);
         return;
+      }
+
+      // Двойная проверка для защиты от race condition
+      const allOverlays = card.element.querySelectorAll('.card-stats-overlay');
+      if (allOverlays.length > 0) {
+        console.warn(`🔄 Found ${allOverlays.length} existing overlays, removing duplicates...`);
+        allOverlays.forEach(overlay => overlay.remove());
       }
 
       // Устанавливаем флаг обработки перед запросом
@@ -1072,6 +1416,14 @@ class CardStatsOverlay {
   }
 
   private insertOverlay(cardElement: HTMLElement, overlay: HTMLElement, selector: CardSelector): void {
+    // Финальная проверка на существование overlay перед вставкой
+    const existingOverlays = cardElement.querySelectorAll('.card-stats-overlay');
+    if (existingOverlays.length > 0) {
+      console.warn(`🚫 Preventing duplicate overlay insertion: found ${existingOverlays.length} existing overlays`);
+      overlay.remove(); // Удаляем созданный overlay
+      return;
+    }
+
     let targetElement: HTMLElement;
     
     if (selector.targetSelector) {
@@ -1161,8 +1513,8 @@ class CardStatsOverlay {
       console.log(`🧹 Cleanup completed: ${removed} overlays removed`);
     }
     
-    // Ограничиваем общее количество оверлеев
-    if (this.currentOverlaysCount > this.MAX_TOTAL_OVERLAYS) {
+    // Ограничиваем общее количество оверлеев (кроме страниц трейдов и ремелт)
+    if (!this.isUnlimitedPage() && this.currentOverlaysCount > this.MAX_TOTAL_OVERLAYS) {
       const excessOverlays = document.querySelectorAll('.card-stats-overlay');
       const toRemove = this.currentOverlaysCount - this.MAX_TOTAL_OVERLAYS;
       
@@ -1173,6 +1525,54 @@ class CardStatsOverlay {
       
       console.log(`🧹 Removed ${toRemove} excess overlays to stay within limit`);
     }
+  }
+
+  // Метод для полной очистки ресурсов
+  destroy(): void {
+    console.log('🔥 Destroying CardStatsOverlay...');
+    
+    // Очищаем таймеры
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer);
+      this.cleanupTimer = null;
+    }
+    
+    if (this.userInactivityTimer) {
+      clearTimeout(this.userInactivityTimer);
+      this.userInactivityTimer = null;
+    }
+    
+    if (this.navigationTimeout) {
+      clearTimeout(this.navigationTimeout);
+      this.navigationTimeout = null;
+    }
+    
+    // Очищаем обработчики событий
+    if (this.clickHandler) {
+      document.removeEventListener('click', this.clickHandler);
+      this.clickHandler = null;
+    }
+    
+    if (this.changeHandler) {
+      document.removeEventListener('change', this.changeHandler);
+      this.changeHandler = null;
+    }
+    
+    // Отключаем IntersectionObserver
+    if (this.intersectionObserver) {
+      this.intersectionObserver.disconnect();
+      this.intersectionObserver = null;
+    }
+    
+    // Очищаем кэши
+    this.cardIdCache.clear();
+    this.statsCache.clear();
+    this.pendingCards.clear();
+    
+    // Удаляем все overlay
+    this.removeAllStatsOverlays();
+    
+    console.log('🔥 CardStatsOverlay destroyed');
   }
 }
 
@@ -1185,6 +1585,11 @@ if (document.readyState === 'loading') {
 } else {
   cardStatsOverlay.init();
 }
+
+// Очистка при выгрузке страницы
+window.addEventListener('beforeunload', () => {
+  cardStatsOverlay.destroy();
+});
 
 // Экспортируем для отладки
 (window as any).cardStatsOverlay = cardStatsOverlay;
